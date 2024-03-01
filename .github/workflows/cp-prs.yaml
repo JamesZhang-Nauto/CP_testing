@@ -8,26 +8,6 @@ on:
     types: ["closed"]
 
 jobs:
-  cherry_pick_3_8_0-release:
-    runs-on: ubuntu-latest
-    name: Cherry pick into 3.8.0-release
-    if: ${{ contains(github.event.pull_request.labels.*.name, '3.8.0-release') && github.event.pull_request.merged == true }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Cherry pick into 3.8.0-release
-        uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
-        with:
-          branch: 3.8.0-release
-          labels: |
-            CP
-          team-reviewers: |
-            nauto/device-sw
-          title: '{old_title} [CP to 3.8.0-release]'
-          body: 'Cherry picking #{old_pull_request_id} onto 3.8.0-release'
-          inherit_labels: false
   cherry_pick_3_10_0-release:
     runs-on: ubuntu-latest
     name: Cherry pick into 3.10.0-release
@@ -47,46 +27,7 @@ jobs:
             nauto/device-sw
           title: '{old_title} [CP to 3.10.0-release]'
           body: 'Cherry picking #{old_pull_request_id} onto 3.10.0-release'
-          inherit_labels: false
-  cherry_pick_3_10_1-release:
-    runs-on: ubuntu-latest
-    name: Cherry pick into 3.10.1-release
-    if: ${{ contains(github.event.pull_request.labels.*.name, '3.10.1-release') && github.event.pull_request.merged == true }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Cherry pick into 3.10.1-release
-        uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
-        with:
-          branch: 3.10.1-release
-          labels: |
-            CP
-          team-reviewers: |
-            nauto/device-sw
-          title: '{old_title} [CP to 3.10.1-release]'
-          body: 'Cherry picking #{old_pull_request_id} onto 3.10.1-release'
-          inherit_labels: false
-  cherry_pick_master:
-    runs-on: ubuntu-latest
-    name: Cherry pick into master
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'master') && github.event.pull_request.merged == true }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Cherry pick into master
-        uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
-        with:
-          branch: master
-          labels: |
-            CP
-          team-reviewers: |
-            nauto/device-sw
-          title: '{old_title} [CP to master]'
-          body: 'Cherry picking #{old_pull_request_id} onto master'
+          cherry-pick-branch: cp-${inputs.branch}-${github.event.client_payload.slash_command.args.named.ref}
           inherit_labels: false
 
 env:
