@@ -23,10 +23,10 @@ jobs:
           branch: 3.10.0-release
           labels: |
             CP :cherries:
-          reviewers: ${{ env.BACKPORT_REVIEWERS }}
+          reviewers: ${{ inputs.author }}
           title: '{old_title} [CP to 3.10.0-release]'
           body: 'Cherry picking #{old_pull_request_id} onto 3.10.0-release'
-          # cherry-pick-branch: "${{ inputs.target-branch }}_${{ inputs.original-pr-branch }}"
+          cherry-pick-branch: cherry-pick-${inputs.branch}-${githubSha}
           inherit_labels: false
 
 env:
