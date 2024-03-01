@@ -3,7 +3,7 @@ on:
     branches:
       - master
       - '*-release'
-    types: [opened, closed, labeled, ready_for_review]
+    types: [closed]
 
 jobs:
   cherry_pick_3_10_0-release:
@@ -25,7 +25,7 @@ jobs:
             CP :cherries:
           reviewers: ${{ inputs.author }}
           title: '{old_title} [CP to $cp_branch_name]'
-          body: 'Cherry picking #{old_pull_request_id} onto ${{cp_branch_name}}'
+          body: 'Cherry picking #{old_pull_request_id} onto $cp_branch_name'
           cherry-pick-branch: ${{ github.head_ref }}_$cp_branch_name_CP
           inherit_labels: false
 
