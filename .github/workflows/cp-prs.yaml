@@ -24,7 +24,7 @@ jobs:
           reviewers: ${{ inputs.author }}
           title: '{old_title} [CP to 3.10.0-release]'
           body: 'Cherry picking #{old_pull_request_id} onto 3.10.0-release'
-          cherry-pick-branch: cp-${{ inputs.branch }}-${{ github.ref_name }}
+          cherry-pick-branch: cp-${{ github.head_ref }}-3.10.0-release
           inherit_labels: false
 
 env:
