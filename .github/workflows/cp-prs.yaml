@@ -18,7 +18,7 @@ jobs:
       - name: Cherry pick into ${{ github.base_ref }}
         uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
         with:
-          branch: ${{ github.event.pull_request.labels.*.name }}
+          branch: 3.10.0-release
           labels: |
             CP :cherries:
           reviewers: ${{ inputs.author }}
