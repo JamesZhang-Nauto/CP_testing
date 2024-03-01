@@ -27,7 +27,7 @@ jobs:
             nauto/device-sw
           title: '{old_title} [CP to 3.10.0-release]'
           body: 'Cherry picking #{old_pull_request_id} onto 3.10.0-release'
-          cherry-pick-branch: 'cp-${{inputs.branch}}-eng:${{ steps.extract_branch.outputs.branch }}'
+          cherry-pick-branch: cp-${{inputs.branch}}-eng:${{ steps.extract_branch.outputs.branch }}
           inherit_labels: false
 
 env:
