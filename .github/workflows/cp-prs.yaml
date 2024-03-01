@@ -11,7 +11,7 @@ jobs:
     env:
       CP_branch_name: '3.10.0-release'
     name: Cherry pick into ${{ github.base_ref }}
-    if: ${{ contains(github.event.pull_request.labels.*.name, ${{CP_branch_name}}) && github.event.pull_request.merged == true }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, env.CP_branch_name) && github.event.pull_request.merged == true }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
