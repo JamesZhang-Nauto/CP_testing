@@ -3,7 +3,7 @@ on:
     branches:
       - master
       - '*-release'
-    types: [labeled]
+    types: [opened]
 
 jobs:
   cherry_pick_3_10_0-release:
