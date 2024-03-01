@@ -9,9 +9,9 @@ jobs:
   cherry_pick_3_10_0-release:
     runs-on: ubuntu-latest
     env:
-      CP_branch_name: '3.10.0-release'
+      cp_branch_name: '3.10.0-release'
     name: Cherry pick into ${{ github.base_ref }}
-    if: ${{ contains(github.event.pull_request.labels.*.name, env.CP_branch_name) && github.event.pull_request.merged == true }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, '3.10.0-release') && github.event.pull_request.merged == true }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
