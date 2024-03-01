@@ -20,13 +20,13 @@ jobs:
       - name: Cherry pick into ${{ github.base_ref }}
         uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
         with:
-          branch: $CPNAME
+          branch: ${{CPNAME}}
           labels: |
             CP :cherries:
           reviewers: ${{ inputs.author }}
-          title: '{old_title} [CP to $CPNAME]'
-          body: 'Cherry picking #{old_pull_request_id} onto $CPNAME'
-          cherry-pick-branch: ${{ github.head_ref }}_${CPNAME}_CP
+          title: '{old_title} [CP to ${{CPNAME}}]'
+          body: 'Cherry picking #{old_pull_request_id} onto ${{CPNAME}}'
+          cherry-pick-branch: ${{ github.head_ref }}_${{CPNAME}}_CP
           inherit_labels: false
 
 env:
