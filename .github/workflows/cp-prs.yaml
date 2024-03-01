@@ -24,9 +24,9 @@ jobs:
           labels: |
             CP :cherries:
           reviewers: ${{ inputs.author }}
-          title: '{old_title} [CP to 3.10.0-release]'
+          title: '{old_title} [CP to $CPNAME]'
           body: 'Cherry picking #{old_pull_request_id} onto $CPNAME'
-          cherry-pick-branch: ${{ github.head_ref }}_3.10.0-release_CP
+          cherry-pick-branch: ${{ github.head_ref }}_cp-to-3.10.0-release
           inherit_labels: false
 
 env:
