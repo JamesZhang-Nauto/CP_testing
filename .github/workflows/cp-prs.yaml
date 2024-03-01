@@ -8,8 +8,10 @@ on:
 jobs:
   cherry_pick_3_10_0-release:
     runs-on: ubuntu-latest
+    env:
+      CP_branch_name: '3.10.0-release'
     name: Cherry pick into ${{ github.base_ref }}
-    if: ${{ contains(github.event.pull_request.labels.*.name, '3.10.0-release') && github.event.pull_request.merged == true }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, $CP_branch_name) && github.event.pull_request.merged == true }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -18,13 +20,13 @@ jobs:
       - name: Cherry pick into ${{ github.base_ref }}
         uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
         with:
-          branch: ${{ github.event.label.name }}
+          branch: $CP_branch_name
           labels: |
             CP :cherries:
           reviewers: ${{ inputs.author }}
-          title: '{old_title} [CP to ${{ github.event.label.name }}]'
-          body: 'Cherry picking #{old_pull_request_id} onto ${{ github.event.label.name }}'
-          cherry-pick-branch: ${{ github.head_ref }}_CP_${{ github.event.label.name }}
+          title: '{old_title} [CP to $CP_branch_name]'
+          body: 'Cherry picking #{old_pull_request_id} onto $CP_branch_name'
+          cherry-pick-branch: ${{ github.head_ref }}_${{ github.event.label.name }}_CP
           inherit_labels: false
 
 env:
