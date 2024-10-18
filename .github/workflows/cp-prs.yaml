@@ -15,9 +15,12 @@ jobs:
         run: |
           # Default to empty
           TARGET_BRANCH=""
-          
-          # Loop through labels
-          for label in "${{ github.event.pull_request.labels.*.name }}"; do
+
+          # Fetch all labels and loop through them
+          for label in ${{ toJson(github.event.pull_request.labels.*.name) }}; do
+            # Strip double quotes around labels
+            label=$(echo $label | tr -d '"')
+
             echo "Check label: $label"
             if [ "$label" == "master" ]; then
               TARGET_BRANCH="master"
@@ -27,15 +30,16 @@ jobs:
               break
             fi
           done
-          
+
           # Fail if no valid branch is found
           if [ -z "$TARGET_BRANCH" ]; then
             echo "No valid branch label (master or *-release) found, exiting."
             exit 1
           fi
-          
+
           # Set the branch name as an output variable
           echo "target_branch=$TARGET_BRANCH" >> $GITHUB_ENV
+        shell: /usr/bin/bash -e {0}
           
       - name: Checkout repository
         uses: actions/checkout@v2
