@@ -15,9 +15,10 @@ jobs:
         run: |
           # Default to empty
           TARGET_BRANCH=""
-
+          echo "${{ github.event.pull_request.labels.*.name }}"
           # Fetch all labels and loop through them
-          for label in $(echo "${{ github.event.pull_request.labels.*.name }}" | tr ',' ' '); do
+          labels=$(echo "${{ github.event.pull_request.labels.*.name }}" | tr -d '[],"')
+          for label in $labels; do
             echo "Check label: $label"
             case "$label" in
               "master")
