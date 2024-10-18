@@ -2,32 +2,55 @@ on:
   pull_request:
     branches:
       - master
-      - '*-release'
-    types: [closed]
+      - '*-release' # This matches all branches ending with '-release'
+    types: ["closed"]
 
 jobs:
-  cherry_pick_3_10_0-release:
+  cherry_pick:
     runs-on: ubuntu-latest
-    env:
-      CPNAME: 3.10.0-release
-    name: Cherry pick into ${{ github.base_ref }}
-    if: ${{ contains(github.event.pull_request.labels.*.name, '3.10.0-release') && github.event.pull_request.merged == true }}
+    if: ${{ github.event.pull_request.merged == true }}
     steps:
-      - name: Checkout
+      - name: Set branch name from PR labels
+        id: set-branch
+        run: |
+          # Default to empty
+          TARGET_BRANCH=""
+          
+          # Loop through labels
+          for label in "${{ github.event.pull_request.labels.*.name }}"; do
+            if [ "$label" == "master" ]; then
+              TARGET_BRANCH="master"
+              break
+            elif [[ "$label" == *-release ]]; then
+              TARGET_BRANCH="$label"
+              break
+            fi
+          done
+          
+          # Fail if no valid branch is found
+          if [ -z "$TARGET_BRANCH" ]; then
+            echo "No valid branch label (master or *-release) found, exiting."
+            exit 1
+          fi
+          
+          # Set the branch name as an output variable
+          echo "target_branch=$TARGET_BRANCH" >> $GITHUB_ENV
+          
+      - name: Checkout repository
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Cherry pick into ${{ github.base_ref }}
+          token: ${{ secrets.BOT_PERMISSION }}
+
+      - name: Cherry pick into the target branch
         uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
         with:
-          branch: 3.10.0-release
+          branch: ${{ env.target_branch }}
           labels: |
-            CP :cherries:
-          reviewers: ${{ inputs.author }}
-          title: '{old_title} [CP to $CPNAME]'
-          body: 'Cherry picking #{old_pull_request_id} onto $CPNAME'
-          cherry-pick-branch: ${{ github.head_ref }}_cp-to-3.10.0-release
+            CP
+          reviewers: |
+            ${{ github.event.pull_request.user.login }}
+          title: '{old_title} [CP to ${{ env.target_branch }}]'
+          body: 'Cherry picking #{old_pull_request_id} onto ${{ env.target_branch }}'
           inherit_labels: false
-
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.BOT_PERMISSION }}
