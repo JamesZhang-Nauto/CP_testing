@@ -1,0 +1,35 @@
+name: Cherry Pick PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: 'The number of the pull request to cherry-pick'
+        required: true
+      branch:
+        description: 'The target branch to cherry-pick into'
+        required: true
+
+jobs:
+  cherry_pick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.BOT_PERMISSION }}
+
+      - name: Cherry pick into the target branch
+        uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
+        with:
+          branch: ${{ github.event.inputs.branch }}
+          pull_request_number: ${{ github.event.inputs.pull_request_number }}
+          labels: |
+            CP
+          reviewers: |
+            ${{ github.event.pull_request.user.login }}
+          title: 'Cherry pick PR #${{ github.event.inputs.pull_request_number }} into ${{ github.event.inputs.branch }}'
+          body: 'Cherry picking PR #${{ github.event.inputs.pull_request_number }} onto ${{ github.event.inputs.branch }}'
+          inherit_labels: false
+          token: ${{ secrets.BOT_PERMISSION }}
