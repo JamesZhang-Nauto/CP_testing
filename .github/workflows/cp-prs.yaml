@@ -18,6 +18,7 @@ jobs:
           
           # Loop through labels
           for label in "${{ github.event.pull_request.labels.*.name }}"; do
+            echo "Check label: $label"
             if [ "$label" == "master" ]; then
               TARGET_BRANCH="master"
               break
