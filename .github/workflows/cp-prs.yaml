@@ -6,62 +6,64 @@ on:
     types: ["closed"]
 
 jobs:
-  cherry_pick:
+  cherry_pick_dispatcher:
     runs-on: ubuntu-latest
     if: ${{ github.event.pull_request.merged == true }}
     steps:
-      - name: Set branch name from PR labels
-        id: set-branch
+      - name: Set branch names from PR labels
+        id: set-branches
         run: |
-          # Default to empty
-          TARGET_BRANCH=""
-
           # Ensure jq is installed
           sudo apt-get update && sudo apt-get install -y jq
 
-          # Fetch all labels and loop through them
+          # Fetch all labels and filter them
           labels=$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH")
           echo "Labels on the PR: $labels"
+
+          # Initialize an empty array for target branches
+          TARGET_BRANCHES=()
 
           for label in $labels; do
             echo "Check label: $label"
             case "$label" in
               "master")
-                TARGET_BRANCH="master"
-                break
+                TARGET_BRANCHES+=("master")
                 ;;
               *-release)
-                TARGET_BRANCH="$label"
-                break
+                TARGET_BRANCHES+=("$label")
                 ;;
             esac
           done
 
-          # Fail if no valid branch is found
-          if [ -z "$TARGET_BRANCH" ]; then
-            echo "No valid branch label (master or *-release) found, exiting."
+          # Fail if no valid branches are found
+          if [ ${#TARGET_BRANCHES[@]} -eq 0 ]; then
+            echo "No valid branch labels (master or *-release) found, exiting."
             exit 1
           fi
 
-          # Set the branch name as an environment variable
-          echo "target_branch=$TARGET_BRANCH" >> $GITHUB_ENV
-        shell: bash
-          
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.BOT_PERMISSION }}
+          # Join the array into a string separated by commas
+          TARGET_BRANCHES_STR=$(IFS=, ; echo "${TARGET_BRANCHES[*]}")
 
-      - name: Cherry pick into the target branch
-        uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
+          # Set the branches as an output variable
+          echo "target_branches=$TARGET_BRANCHES_STR" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Dispatch cherry-pick workflows
+        uses: actions/github-script@v6
         with:
-          branch: ${{ env.target_branch }}
-          labels: |
-            CP
-          reviewers: |
-            ${{ github.event.pull_request.user.login }}
-          title: '{old_title} [CP to ${{ env.target_branch }}]'
-          body: 'Cherry picking #{old_pull_request_id} onto ${{ env.target_branch }}'
-          inherit_labels: false
-          token: ${{ secrets.BOT_PERMISSION }}
+          script: |
+            const branches = '${{ steps.set-branches.outputs.target_branches }}'.split(',');
+            const prNumber = context.payload.pull_request.number;
+            for (const branch of branches) {
+              console.log(`Dispatching cherry-pick workflow for branch: ${branch}`);
+              await github.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'cherry-pick.yml',
+                ref: 'main',  // Adjust this if your default branch is not 'main'
+                inputs: {
+                  pull_request_number: prNumber.toString(),
+                  branch: branch
+                }
+              });
+            }
