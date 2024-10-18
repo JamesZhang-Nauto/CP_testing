@@ -19,13 +19,16 @@ jobs:
           # Fetch all labels and loop through them
           for label in $(echo "${{ github.event.pull_request.labels.*.name }}" | tr ',' ' '); do
             echo "Check label: $label"
-            if [ "$label" == "master" ]; then
-              TARGET_BRANCH="master"
-              break
-            elif [[ "$label" == *-release ]]; then
-              TARGET_BRANCH="$label"
-              break
-            fi
+            case "$label" in
+              "master")
+                TARGET_BRANCH="master"
+                break
+                ;;
+              *-release)
+                TARGET_BRANCH="$label"
+                break
+                ;;
+            esac
           done
 
           # Fail if no valid branch is found
