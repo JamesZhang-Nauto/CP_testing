@@ -17,10 +17,7 @@ jobs:
           TARGET_BRANCH=""
 
           # Fetch all labels and loop through them
-          for label in ${{ toJson(github.event.pull_request.labels.*.name) }}; do
-            # Strip double quotes around labels
-            label=$(echo $label | tr -d '"')
-
+          for label in $(echo "${{ github.event.pull_request.labels.*.name }}" | tr ',' ' '); do
             echo "Check label: $label"
             if [ "$label" == "master" ]; then
               TARGET_BRANCH="master"
