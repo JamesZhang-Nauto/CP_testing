@@ -15,9 +15,14 @@ jobs:
         run: |
           # Default to empty
           TARGET_BRANCH=""
-          echo "${{ github.event.pull_request.labels.*.name }}"
+
+          # Ensure jq is installed
+          sudo apt-get update && sudo apt-get install -y jq
+
           # Fetch all labels and loop through them
-          labels=$(echo "${{ github.event.pull_request.labels.*.name }}" | tr -d '[],"')
+          labels=$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH")
+          echo "Labels on the PR: $labels"
+
           for label in $labels; do
             echo "Check label: $label"
             case "$label" in
@@ -38,9 +43,9 @@ jobs:
             exit 1
           fi
 
-          # Set the branch name as an output variable
+          # Set the branch name as an environment variable
           echo "target_branch=$TARGET_BRANCH" >> $GITHUB_ENV
-        shell: /usr/bin/bash -e {0}
+        shell: bash
           
       - name: Checkout repository
         uses: actions/checkout@v2
