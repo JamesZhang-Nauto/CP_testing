@@ -60,7 +60,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 workflow_id: 'cherry-pick.yml',
-                ref: 'main',  // Adjust this if your default branch is not 'main'
+                ref: 'master',  // Adjust this if your default branch is not 'main'
                 inputs: {
                   pull_request_number: prNumber.toString(),
                   branch: branch
