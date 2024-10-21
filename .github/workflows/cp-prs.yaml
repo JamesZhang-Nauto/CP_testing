@@ -47,20 +47,20 @@ jobs:
           # Set the branches as an output variable
           echo "target_branches=$TARGET_BRANCHES_STR" >> $GITHUB_OUTPUT
         shell: bash
-
       - name: Dispatch cherry-pick workflows
         uses: actions/github-script@v6
         with:
           script: |
             const branches = '${{ steps.set-branches.outputs.target_branches }}'.split(',');
             const prNumber = context.payload.pull_request.number;
+      
             for (const branch of branches) {
               console.log(`Dispatching cherry-pick workflow for branch: ${branch}`);
-              await github.actions.createWorkflowDispatch({
+              await github.request('POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 workflow_id: 'cherry-pick.yml',
-                ref: 'master',
+                ref: 'main',  // Adjust this if your default branch is not 'main'
                 inputs: {
                   pull_request_number: prNumber.toString(),
                   branch: branch
