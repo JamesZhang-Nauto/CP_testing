@@ -1,22 +1,33 @@
+name: Cherry Pick PRs
+
 on:
   pull_request:
-    branches:
-      - master
-      - '*-release' # This matches all branches ending with '-release'
-    types: ["closed"]
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  cherry_pick_dispatcher:
+  cherry_pick:
     runs-on: ubuntu-latest
     if: ${{ github.event.pull_request.merged == true }}
     steps:
-      - name: Set branch names from PR labels
-        id: set-branches
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.BOT_PERMISSION }}
+
+      - name: Get list of target branches from labels
+        id: get_branches
+        shell: bash
         run: |
           # Ensure jq is installed
-          sudo apt-get update && sudo apt-get install -y jq
+          sudo apt-get update -qq
+          sudo apt-get install -y jq
 
-          # Fetch all labels and filter them
+          # Get labels from the PR
           labels=$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH")
           echo "Labels on the PR: $labels"
 
@@ -24,7 +35,7 @@ jobs:
           TARGET_BRANCHES=()
 
           for label in $labels; do
-            echo "Check label: $label"
+            echo "Checking label: $label"
             case "$label" in
               "master")
                 TARGET_BRANCHES+=("master")
@@ -35,35 +46,80 @@ jobs:
             esac
           done
 
-          # Fail if no valid branches are found
           if [ ${#TARGET_BRANCHES[@]} -eq 0 ]; then
-            echo "No valid branch labels (master or *-release) found, exiting."
+            echo "No valid branch labels (master or *-release) found. Exiting."
+            exit 0  # Exit gracefully if no valid labels are found
+          fi
+
+          # Export the branches as an environment variable
+          echo "TARGET_BRANCHES=${TARGET_BRANCHES[*]}" >> $GITHUB_ENV
+
+      - name: Cherry-pick into target branches
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_PERMISSION }}
+          TARGET_BRANCHES: ${{ env.TARGET_BRANCHES }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git remote set-url origin https://${{ secrets.BOT_PERMISSION }}@github.com/${{ github.repository }}
+
+          # Get the merge commit SHA of the merged PR
+          MERGE_COMMIT_SHA=$(jq -r '.pull_request.merge_commit_sha' "$GITHUB_EVENT_PATH")
+
+          if [ -z "$MERGE_COMMIT_SHA" ] || [ "$MERGE_COMMIT_SHA" == "null" ]; then
+            echo "Merge commit SHA not found. Exiting."
             exit 1
           fi
 
-          # Join the array into a string separated by commas
-          TARGET_BRANCHES_STR=$(IFS=, ; echo "${TARGET_BRANCHES[*]}")
+          echo "Merge commit SHA: $MERGE_COMMIT_SHA"
 
-          # Set the branches as an output variable
-          echo "target_branches=$TARGET_BRANCHES_STR" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Dispatch cherry-pick workflows
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const branches = '${{ steps.set-branches.outputs.target_branches }}'.split(',');
-            const prNumber = context.payload.pull_request.number;
-      
-            for (const branch of branches) {
-              console.log(`Dispatching cherry-pick workflow for branch: ${branch}`);
-              await github.request('POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: 'cherry-pick.yml',
-                ref: 'master',  // Adjust this if your default branch is not 'main'
-                inputs: {
-                  pull_request_number: prNumber.toString(),
-                  branch: branch
-                }
-              });
-            }
+          # Convert TARGET_BRANCHES to an array
+          IFS=' ' read -r -a BRANCHES <<< "$TARGET_BRANCHES"
+
+          for TARGET_BRANCH in "${BRANCHES[@]}"; do
+            echo "Processing branch: $TARGET_BRANCH"
+
+            # Fetch and checkout the target branch
+            git fetch origin $TARGET_BRANCH
+            git checkout $TARGET_BRANCH
+
+            # Create a new branch for the cherry-pick
+            NEW_BRANCH="cherry-pick/$TARGET_BRANCH/pr-${{ github.event.pull_request.number }}"
+            git checkout -b "$NEW_BRANCH"
+
+            # Perform the cherry-pick
+            if git cherry-pick -x "$MERGE_COMMIT_SHA"; then
+              echo "Cherry-pick succeeded on branch $TARGET_BRANCH"
+            else
+              echo "Cherry-pick failed on branch $TARGET_BRANCH. Aborting cherry-pick and moving to the next branch."
+              git cherry-pick --abort
+              continue
+            fi
+
+            # Push the new branch
+            git push origin "$NEW_BRANCH"
+
+            # Create a pull request using the GitHub CLI
+            PR_TITLE="${{ github.event.pull_request.title }} [CP to $TARGET_BRANCH]"
+            PR_BODY="Cherry pick of PR #${{ github.event.pull_request.number }} into \`$TARGET_BRANCH\`"
+
+            # Install GitHub CLI
+            sudo apt-get install -y gh
+
+            # Authenticate GitHub CLI
+            echo "${{ secrets.BOT_PERMISSION }}" | gh auth login --with-token
+
+            # Create the pull request
+            gh pr create \
+              --repo "${{ github.repository }}" \
+              --head "$NEW_BRANCH" \
+              --base "$TARGET_BRANCH" \
+              --title "$PR_TITLE" \
+              --body "$PR_BODY" \
+              --label "CP" \
+              --reviewer "${{ github.event.pull_request.user.login }}" \
+              --assignee "${{ github.event.pull_request.user.login }}"
+
+          done
