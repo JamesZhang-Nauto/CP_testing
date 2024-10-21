@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          token: ${{ secrets.BOT_PERMISSION }}
+          # token: ${{ secrets.BOT_PERMISSION }}
 
       - name: Cherry pick into the target branch
         uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
@@ -32,4 +32,4 @@ jobs:
           title: 'Cherry pick PR #${{ github.event.inputs.pull_request_number }} into ${{ github.event.inputs.branch }}'
           body: 'Cherry picking PR #${{ github.event.inputs.pull_request_number }} onto ${{ github.event.inputs.branch }}'
           inherit_labels: false
-          token: ${{ secrets.BOT_PERMISSION }}
+          # token: ${{ secrets.BOT_PERMISSION }}
